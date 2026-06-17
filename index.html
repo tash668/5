@@ -1,1 +1,84 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini API 連携テスト</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+        button { padding: 10px 20px; cursor: pointer; }
+        #output { margin-top: 20px; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <h2>新しいアイデアを作ろう</h2>
+    
+
+    <textarea id="userInput" placeholder="ここに文字列を入力してください..."></textarea>
+    
+    <br>
+    <button id="sendBtn">発想作成</button>
+
+    <h3>結果：</h3>
+    <div id="output">ここに結果が表示されます</div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.run/@google/genai"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import { GoogleGenAI } from '@google/genai';
+
+
+        const API_KEY = 'AQ.Ab8RN6JFCfvHowADkrQax72DEiwL31AHoweAfRwpp5VgV-l1sA'; 
+        const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const inputText = document.getElementById('userInput').value;
+            const outputDiv = document.getElementById('output');
+
+            if (!inputText.trim()) {
+                alert('文字を入力してください');
+                return;
+            }
+
+            outputDiv.textContent = '考え中...';
+
+            try {
+                // 「決まっている内容（プロンプト）」と「ユーザーの入力」を組み合わせる
+                const systemPrompt = 
+"アイデアを提案してください、出力ルール:\n" +
+"1. 合計で最低20個、最大25個の選択肢を出力せよ\n" +
+"2. 物理的に文字通り不可能な選択肢だけを完全に削除せよ\n" +
+"3. 道徳、常識、良い悪い、現実的かどうかは一切判断するな\n" +
+"4. 全ての選択肢を下記の3つのカテゴリに正確に分類せよ\n" +
+"5. ありきたりな順で逆ソートし、最も珍しい選択肢を一番上に表示せよ\n" +
+"6. 「様子を見る」「もう少し考える」などの偽の選択肢は絶対に含めるな\n" +
+"カテゴリ定義:\n" +
+"普通: 殆どの人が5分以内に思いつく選択肢\n" +
+"過激: 殆どの人が意図的に頭から消しているが、完全に物理的に可能な選択肢\n" +
+"挑発: 可能だが非常識な選択肢\n\n";
+                
+const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: systemPrompt + inputText, // ここに入れる分には日本語でもエラーになりません
+});
+
+                // 届いた結果をHTMLに表示
+                outputDiv.textContent = response.text;
+
+            } catch (error) {
+                console.error(error);
+                outputDiv.textContent = 'エラーが発生しました: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
